@@ -1,0 +1,108 @@
+# ============================================
+# DBT Data Quality Tests
+# Author: Awanish Kumar
+# Project: Hospital Readmission Analysis
+# ============================================
+
+version: 2
+
+models:
+
+  - name: stg_patient_records
+    description: "Bronze layer — raw patient records from staging"
+    columns:
+      - name: patient_id
+        description: "Unique patient identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: admission_date
+        description: "Date of hospital admission"
+        tests:
+          - not_null
+
+      - name: department_name
+        description: "Hospital department name"
+        tests:
+          - not_null
+
+      - name: readmission_flag
+        description: "Boolean flag for readmission"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+  - name: int_patient_readmission
+    description: "Silver layer — cleaned and standardized readmission data"
+    columns:
+      - name: patient_id
+        description: "Unique patient identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: age_group
+        description: "Patient age group category"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Pediatric', 'Young Adult', 'Middle Aged', 'Senior']
+
+      - name: readmission_category
+        description: "Readmission time category"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [
+                '30-Day Readmission',
+                '60-Day Readmission',
+                '90-Day Readmission',
+                'No Readmission'
+              ]
+
+      - name: length_of_stay
+        description: "Number of days in hospital"
+        tests:
+          - not_null
+
+      - name: total_cost
+        description: "Total treatment cost"
+        tests:
+          - not_null
+
+  - name: fact_readmission
+    description: "Gold layer — star schema fact table for reporting"
+    columns:
+      - name: readmission_id
+        description: "Surrogate key for readmission fact"
+        tests:
+          - not_null
+          - unique
+
+      - name: patient_id
+        description: "Foreign key to dim_patient"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_patient')
+              field: patient_id
+
+      - name: department_id
+        description: "Foreign key to dim_department"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_department')
+              field: department_id
+
+      - name: admission_date
+        description: "Patient admission date"
+        tests:
+          - not_null
+
+      - name: total_cost
+        description: "Total treatment cost"
+        tests:
+          - not_null
